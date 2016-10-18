@@ -63,6 +63,9 @@ unsigned char maze[5][5] =
 
 unsigned char testMaze[5][5] = {0};
 
+unsigned char newInfo[3]={0,0,0};
+unsigned char rxInfo[3]={0};
+
 void setup(void)
 {
   //
@@ -84,7 +87,7 @@ void setup(void)
   // optionally, increase the delay between retries & # of retries
   radio.setRetries(15,15);
   radio.setAutoAck(true);
-  // set the channel
+  // set the channel  
   radio.setChannel(0x50);
   // set the power
   // RF24_PA_MIN=-18dBm, RF24_PA_LOW=-12dBm, RF24_PA_MED=-6dBM, and RF24_PA_HIGH=0dBm.
@@ -142,9 +145,16 @@ void loop(void)
 
     // Take the time, and send it.  This will block until complete
     unsigned long time = millis();
-    printf("Now sending %lu...",time);
+    printf("Now sending %d...",maze[0][0]);
     //bool ok = radio.write( &time, sizeof(unsigned long) );
     bool ok = radio.write( &maze, sizeof(maze) );
+
+//     newInfo[0] += 1;
+//     newInfo[1] += 1;
+
+     maze[0][0] += 1;
+      
+//      bool ok= radio.write( newInfo, sizeof(newInfo) );
 
     if (ok)
       printf("ok...");
@@ -197,6 +207,7 @@ void loop(void)
         // Fetch the payload, and see if this was the last one.
         //done = radio.read( &got_time, sizeof(unsigned long) );
         done = radio.read( testMaze, sizeof(testMaze) );
+//        done=radio.read(rxInfo,sizeof(rxInfo));
         
         // Spew it
         Serial.println("Recieved");
@@ -207,8 +218,11 @@ void loop(void)
           }
           Serial.println("");
         }
+//        printf("X: %d, Y: %d Data:%d",rxInfo[0],rxInfo[1],rxInfo[2]);
+//        Serial.println(" ");
+        
         // Delay just a little bit to let the other unit
-        // make the transition to receiver
+        // make the transition t  o receiver
         delay(20);
 
       }
