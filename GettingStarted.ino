@@ -34,7 +34,7 @@ RF24 radio(9,10);
 //
 
 // Radio pipe addresses for the 2 nodes to communicate.
-const uint64_t pipes[2] = { 0xF0F0F0F0E1LL, 0xF0F0F0F0D2LL };
+const uint64_t pipes[2] = { 0x000000000CLL, 0x000000000DLL };
 
 //
 // Role management
@@ -51,6 +51,17 @@ const char* role_friendly_name[] = { "invalid", "Ping out", "Pong back"};
 
 // The role of the current running sketch
 role_e role = role_pong_back;
+
+unsigned char maze[5][5] =
+{
+  3, 3, 3, 3, 3,
+  3, 1, 1, 1, 3,
+  3, 2, 0, 1, 2,
+  3, 1, 3, 1, 3,
+  3, 0, 3, 1, 0,
+};
+
+unsigned char testMaze[5][5] = {0};
 
 void setup(void)
 {
@@ -132,7 +143,8 @@ void loop(void)
     // Take the time, and send it.  This will block until complete
     unsigned long time = millis();
     printf("Now sending %lu...",time);
-    bool ok = radio.write( &time, sizeof(unsigned long) );
+    //bool ok = radio.write( &time, sizeof(unsigned long) );
+    bool ok = radio.write( &maze, sizeof(maze) );
 
     if (ok)
       printf("ok...");
@@ -183,11 +195,18 @@ void loop(void)
       while (!done)
       {
         // Fetch the payload, and see if this was the last one.
-        done = radio.read( &got_time, sizeof(unsigned long) );
-
+        //done = radio.read( &got_time, sizeof(unsigned long) );
+        done = radio.read( testMaze, sizeof(testMaze) );
+        
         // Spew it
-        printf("Got payload %lu...",got_time);
+        Serial.println("Recieved");
 
+        for (int i = 0; i < 5; i++) {
+          for (int j = 0; j < 5; j++) {
+            Serial.print(testMaze[i][j]); Serial.print(" ");
+          }
+          Serial.println("");
+        }
         // Delay just a little bit to let the other unit
         // make the transition to receiver
         delay(20);
