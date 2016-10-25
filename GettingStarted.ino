@@ -21,6 +21,37 @@
 #include "RF24.h"
 #include "printf.h"
 
+
+
+typedef enum {
+  WALL_UP = 1,
+  WALL_DOWN = 2,
+  WALL_LEFT = 4,
+  WALL_RIGHT = 8,
+  FINISHED = 128,
+} FLAGS;
+
+#define  WALL_UP 1;
+#define  WALL_DOWN 2;
+#define  WALL_LEFT 4;
+#define  WALL_RIGHT 8;
+#define  NO_TREASURE 0;
+#define  KHZ_7 1;
+#define  KHZ_9 2;
+#define  KHZ_11 3;
+#define  KHZ_13 4;
+#define  KHZ_15 5;
+#define  KHZ_17 6;
+#define  FINISHED 128;
+
+char info[2] ={0};
+char testInfo[2] = {0};
+bool wallUp = 0;
+bool wallDown = 0;
+bool wallLeft = 0;
+bool wallRight = 0;
+uint8_t xPos;
+uint8_t yPos;
 //
 // Hardware configuration
 //
@@ -91,7 +122,7 @@ void setup(void)
   radio.setChannel(0x50);
   // set the power
   // RF24_PA_MIN=-18dBm, RF24_PA_LOW=-12dBm, RF24_PA_MED=-6dBM, and RF24_PA_HIGH=0dBm.
-  radio.setPALevel(RF24_PA_MIN);
+  radio.setPALevel(RF24_PA_HIGH);
   //RF24_250KBPS for 250kbs, RF24_1MBPS for 1Mbps, or RF24_2MBPS for 2Mbps
   radio.setDataRate(RF24_250KBPS);
 
@@ -134,25 +165,46 @@ void setup(void)
 
 void loop(void)
 {
+  xPos = 7;
+  yPos = 7;
+  wallUp = 1;
+  wallDown = 1;
+  wallLeft = 1;
+  wallRight = 1;
+  info[1] = 0;
+  info[0] = (((xPos << 4) & 0xF0) | (yPos & 0x0F));
+  if ( wallUp) info[1] |= WALL_UP;
+  if ( wallDown) info[1] |= WALL_DOWN;  
+  if ( wallLeft) info[1] |= WALL_LEFT; 
+  if ( wallRight) info[1] |= WALL_RIGHT;
+
+  //treasure
+  int treasure = KHZ_17;
+  if (treasure) info[1] |= (treasure << 4 & 0x70);
+  
   //
   // Ping out role.  Repeatedly send the current time
   //
 
   if (role == role_ping_out)
   {
-    // First, stop listening so we can talk.
+    
+    int attempt = 0;
+    maze[0][0] += 1;
+    while ( attempt < 3 ) { //attempt to send three times
+      // First, stop listening so we can talk.
     radio.stopListening();
 
     // Take the time, and send it.  This will block until complete
     unsigned long time = millis();
-    printf("Now sending %d...",maze[0][0]);
+    printf("Now sending %d and %d.",info[0], info[1]);
     //bool ok = radio.write( &time, sizeof(unsigned long) );
-    bool ok = radio.write( &maze, sizeof(maze) );
+    bool ok = radio.write( &info, sizeof(info) );
 
 //     newInfo[0] += 1;
 //     newInfo[1] += 1;
 
-     maze[0][0] += 1;
+     
       
 //      bool ok= radio.write( newInfo, sizeof(newInfo) );
 
@@ -184,11 +236,19 @@ void loop(void)
 
       // Spew it
       printf("Got response %lu, round-trip delay: %lu\n\r",got_time,millis()-got_time);
+
+      delay (2000); 
+      
+      break;
     }
 
-    // Try again 1s later
-    delay(1000);
-  }
+    // Try again 0.5s later
+    delay(500);
+    
+    attempt+=1; // try again.
+    }
+   }
+    
 
   //
   // Pong back role.  Receive each packet, dump it out, and send it back
@@ -206,18 +266,26 @@ void loop(void)
       {
         // Fetch the payload, and see if this was the last one.
         //done = radio.read( &got_time, sizeof(unsigned long) );
-        done = radio.read( testMaze, sizeof(testMaze) );
+        done = radio.read( testInfo, sizeof(testInfo) );
 //        done=radio.read(rxInfo,sizeof(rxInfo));
         
         // Spew it
         Serial.println("Recieved");
 
+        Serial.println(testInfo[0], BIN);
+        Serial.println(testInfo[1], BIN);
+
+        //if
+
+        /*
         for (int i = 0; i < 5; i++) {
           for (int j = 0; j < 5; j++) {
             Serial.print(testMaze[i][j]); Serial.print(" ");
           }
           Serial.println("");
         }
+        */
+        
 //        printf("X: %d, Y: %d Data:%d",rxInfo[0],rxInfo[1],rxInfo[2]);
 //        Serial.println(" ");
         
