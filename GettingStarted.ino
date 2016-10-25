@@ -52,6 +52,8 @@ bool wallLeft = 0;
 bool wallRight = 0;
 uint8_t xPos;
 uint8_t yPos;
+int treasure;
+boolean finish = true;
 //
 // Hardware configuration
 //
@@ -165,22 +167,22 @@ void setup(void)
 
 void loop(void)
 {
-  xPos = 7;
-  yPos = 7;
+  xPos = 2;
+  yPos = 3;
   wallUp = 1;
   wallDown = 1;
-  wallLeft = 1;
-  wallRight = 1;
+  wallLeft = 0;
+  wallRight = 0;
+  treasure = KHZ_9;
+  finish = true;
   info[1] = 0;
   info[0] = (((xPos << 4) & 0xF0) | (yPos & 0x0F));
   if ( wallUp) info[1] |= WALL_UP;
   if ( wallDown) info[1] |= WALL_DOWN;  
   if ( wallLeft) info[1] |= WALL_LEFT; 
   if ( wallRight) info[1] |= WALL_RIGHT;
-
-  //treasure
-  int treasure = KHZ_17;
   if (treasure) info[1] |= (treasure << 4 & 0x70);
+  if (finish) info[1] |= FINISHED;
   
   //
   // Ping out role.  Repeatedly send the current time
