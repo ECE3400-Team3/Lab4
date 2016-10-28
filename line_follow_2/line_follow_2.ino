@@ -1,4 +1,3 @@
-
 #include <Servo.h>
 
 // Servo speed definitions
@@ -11,10 +10,10 @@
 #define ERROR_RANGE 15
 
 // Sensor pins
-int right_pid = A2; // right center
-int left_pid = A3; // left center
-int right_turn = 8; // right turn sensor 
-int left_turn = 9; // left turn sensor
+int right_pid = A0; // right center
+int left_pid = A1; // left center
+int right_turn = 9; // right turn sensor 
+int left_turn = 7; // left turn sensor
 
 // Servo objects
 Servo left_servo;
@@ -34,7 +33,7 @@ int left_turn_val = 0;
 // Drive direction commands
 int drive_forward = 1;
 int drive_left = 0;
-int drive_right = 0;
+int drive_right = 1;
 int drive_back = 0;
 
 void setup() {
@@ -71,8 +70,10 @@ void loop() {
   error = curr_pos - set_point;
   
   // Read digital values from left and right turn sensors (Schmitt Triggers)
-  //right_turn_val = digitalRead(right_turn);
-  //left_turn_val = digitalRead(left_turn);
+  right_turn_val = digitalRead(right_turn);
+  left_turn_val = digitalRead(left_turn);
+
+
   
   // If not at intersection, drive forward 
   if (right_turn_val == 0 && left_turn_val == 0 && drive_forward){
@@ -103,6 +104,35 @@ void loop() {
   // Else, make decision to turn left or right
   else if (right_turn_val == 1 && left_turn_val == 1 && drive_right){
     // Make 90 degree right turn
+
+    //drive forward until front sensors are clear of the horizontal tape
+    delay(45);
+
+
+    left_servo.write(SERVO_L_FORWARD_MAX);
+    right_servo.write(SERVO_L_FORWARD_MAX);
+    delay(200);
+
+    right_turn_val = 0;
+    left_turn_val = 0;
+    while((abs(error) > 2*ERROR_RANGE) || (right_pid_val<800)){
+      left_servo.write(SERVO_L_FORWARD_MAX);
+      right_servo.write(SERVO_L_FORWARD_MAX);
+      right_pid_val = analogRead(right_pid); //signal from center right sensor
+      left_pid_val = analogRead(left_pid); //signal from center left sensor
+      curr_pos = left_pid_val - right_pid_val; // Positive position to right of line
+      error = curr_pos - set_point;
+      Serial.println(error);
+      Serial.println(right_turn_val);
+      Serial.println(left_turn_val);
+      Serial.println();
+
+      delay(5);
+    }
+    
+    left_servo.write(90);
+    right_servo.write(90);
+    delay(10000);
   }
   else if (right_turn_val == 1 && left_turn_val == 1 && drive_left){
     // Make 90 degree left turn
