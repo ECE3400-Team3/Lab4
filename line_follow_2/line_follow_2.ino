@@ -24,12 +24,15 @@ float set_point = 0;
 float curr_pos = 0;
 float error = 0;
 
+int error_magnitude = 0;
+
 // Sensor readings
 int right_pid_val = 0; 
 int left_pid_val = 0;
 int right_turn_val = 0;
 int left_turn_val = 0;
 int at_intersection = 0;
+
 
 // Drive direction commands
 int drive_forward = 1;
@@ -124,16 +127,18 @@ void loop() {
       // Too right
       else if (error > ERROR_RANGE) {
       // Adjust left
-      left_servo.write(SERVO_L_FORWARD_MAX - SERVO_L_INCR_FORWARD);
-      right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
+      error_magnitude = error/ERROR_RANGE;
+      left_servo.write(SERVO_L_FORWARD_MAX - error_magnitude*SERVO_L_INCR_FORWARD);
+      right_servo.write(SERVO_R_FORWARD_MAX + error_magnitude*SERVO_R_INCR_FORWARD);
       //delay(6);
       //left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
       //delay(1);
       }
-      else if (error < ERROR_RANGE) {
+      else if (error < -ERROR_RANGE) {
       // Adjust right
-      left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
-      right_servo.write(SERVO_R_FORWARD_MAX - SERVO_R_INCR_FORWARD);
+      error_magnitude = -error/ERROR_RANGE;
+      left_servo.write(SERVO_L_FORWARD_MAX + error_magnitude*SERVO_L_INCR_FORWARD);
+      right_servo.write(SERVO_R_FORWARD_MAX - error_magnitude*SERVO_R_INCR_FORWARD);
       //delay(6);
       //right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
       //delay(1);
