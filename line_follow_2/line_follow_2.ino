@@ -29,6 +29,7 @@ int right_pid_val = 0;
 int left_pid_val = 0;
 int right_turn_val = 0;
 int left_turn_val = 0;
+int at_intersection = 0;
 
 // Drive direction commands
 int drive_forward = 1;
@@ -65,7 +66,7 @@ void loop() {
   // Read analog values from two center sensors
   right_pid_val = analogRead(right_pid); //signal from center right sensor
   left_pid_val = analogRead(left_pid); //signal from center left sensor
-
+  
   curr_pos = left_pid_val - right_pid_val; // Positive position to right of line
   error = curr_pos - set_point;
   
@@ -73,49 +74,26 @@ void loop() {
   right_turn_val = digitalRead(right_turn);
   left_turn_val = digitalRead(left_turn);
 
-
+  at_intersection = left_turn_val && right_turn_val;
   
-  // If not at intersection, drive forward 
-  if (right_turn_val == 0 && left_turn_val == 0 && drive_forward){
-    // Continue to drive forward, making corrections as necessary
-    if (abs(error) <= ERROR_RANGE){
+  if (at_intersection){
+    if (drive_right){
+      // Make 90 degree right turn
       left_servo.write(SERVO_L_FORWARD_MAX);
       right_servo.write(SERVO_R_FORWARD_MAX);
-      delay(1);
-    }
-    // Too right
-    else if (error > ERROR_RANGE) {
-      // Adjust left
-      left_servo.write(SERVO_L_FORWARD_MAX - SERVO_L_INCR_FORWARD);
-      right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
-      //delay(6);
-      //left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
-      //delay(1);
-    }
-    else if (error < ERROR_RANGE) {
-      // Adjust right
-      left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
-      right_servo.write(SERVO_R_FORWARD_MAX - SERVO_R_INCR_FORWARD);
-      //delay(6);
-      //right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
-      //delay(1);
-    }
-  }
-  // Else, make decision to turn left or right
-  else if (right_turn_val == 1 && left_turn_val == 1 && drive_right){
-    // Make 90 degree right turn
-
-    //drive forward until front sensors are clear of the horizontal tape
-    delay(45);
-
-
-    left_servo.write(SERVO_L_FORWARD_MAX);
-    right_servo.write(SERVO_L_FORWARD_MAX);
-    delay(200);
-
-    right_turn_val = 0;
-    left_turn_val = 0;
-    while((abs(error) > 2*ERROR_RANGE) || (right_pid_val<800)){
+      //drive forward until front sensors are clear of the horizontal tape
+      delay(45);
+ 
+      left_servo.write(SERVO_L_FORWARD_MAX);
+      right_servo.write(SERVO_L_FORWARD_MAX);
+      delay(300);
+      right_pid_val = analogRead(right_pid); //signal from center right sensor
+      left_pid_val = analogRead(left_pid); //signal from center left sensor
+      curr_pos = left_pid_val - right_pid_val; // Positive position to right of line
+      error = curr_pos - set_point;
+      right_turn_val = 0;
+      left_turn_val = 0;
+      while((abs(error) < ERROR_RANGE) || (right_pid_val<900)){
       left_servo.write(SERVO_L_FORWARD_MAX);
       right_servo.write(SERVO_L_FORWARD_MAX);
       right_pid_val = analogRead(right_pid); //signal from center right sensor
@@ -123,22 +101,45 @@ void loop() {
       curr_pos = left_pid_val - right_pid_val; // Positive position to right of line
       error = curr_pos - set_point;
       Serial.println(error);
-      Serial.println(right_turn_val);
-      Serial.println(left_turn_val);
+      Serial.println(right_pid_val);
+      Serial.println(left_pid_val);
       Serial.println();
-
       delay(5);
+      }
+    
+      left_servo.write(90);
+      right_servo.write(90);
+      delay(1000);
     }
     
-    left_servo.write(90);
-    right_servo.write(90);
-    delay(10000);
   }
-  else if (right_turn_val == 1 && left_turn_val == 1 && drive_left){
-    // Make 90 degree left turn
-  }
-  else if (right_turn_val == 1 && left_turn_val == 1 && drive_back){
-    // Make 180 turn
-  }
+  else{
+    if(drive_forward){
+      // Continue to drive forward, making corrections as necessary
+      if (abs(error) <= ERROR_RANGE){
+      left_servo.write(SERVO_L_FORWARD_MAX);
+      right_servo.write(SERVO_R_FORWARD_MAX);
+      delay(1);
+      }
+      // Too right
+      else if (error > ERROR_RANGE) {
+      // Adjust left
+      left_servo.write(SERVO_L_FORWARD_MAX - SERVO_L_INCR_FORWARD);
+      right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
+      //delay(6);
+      //left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
+      //delay(1);
+      }
+      else if (error < ERROR_RANGE) {
+      // Adjust right
+      left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
+      right_servo.write(SERVO_R_FORWARD_MAX - SERVO_R_INCR_FORWARD);
+      //delay(6);
+      //right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
+      //delay(1);
+      }
+    }
+
   delay(10);
+  }
 }
