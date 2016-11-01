@@ -7,14 +7,14 @@
 #define SERVO_L_INCR_FORWARD 1.0
 #define SERVO_R_INCR_FORWARD -1.0
 
-#define ERROR_RANGE 15
+#define ERROR_RANGE 40
 #define ERROR_INCREMENT 5
 
 // Sensor pins
 int right_pid = A0; // right center
 int left_pid = A1; // left center
-int right_turn = 9; // right turn sensor 
-int left_turn = 7; // left turn sensor
+int right_turn = A2; // right turn sensor 
+int left_turn = A3; // left turn sensor
 
 // Servo objects
 Servo left_servo;
@@ -59,56 +59,47 @@ void setup() {
   pinMode(left_turn, INPUT);
 
   // Callibrate center sensors for value when both over line
-  set_point =  analogRead(left_pid) - analogRead(right_pid);
+  set_point =  0;//analogRead(left_pid) - analogRead(right_pid);
 
   // Wait at start for 1 second
   delay(1000);
-
 }
 
 void loop() {
-  // Read digital values from left and right turn sensors (Schmitt Triggers)
-  right_turn_val = digitalRead(right_turn);
-  left_turn_val = digitalRead(left_turn);
-  
-  //check if you're at an intersection
-  at_intersection = left_turn_val && right_turn_val;
-  Serial.println(left_turn_val);
-  Serial.println(right_turn_val);
-  Serial.println();
-  if (at_intersection){
-    left_servo.write(90);
-    right_servo.write(90);
-    delay(1000);
+  //check if you're at an intersection  
+    right_turn_val = analogRead(right_turn); //signal from center right sensor
+    left_turn_val = analogRead(left_turn); //signal from center left sensor
+    
+  //right turn
+  if (right_turn_val>700 && left_turn_val>700){
     if (drive_right){
       // Make 90 degree right turn
       left_servo.write(SERVO_L_FORWARD_MAX);
       right_servo.write(SERVO_R_FORWARD_MAX);
       //drive forward until front sensors are clear of the horizontal tape
-      delay(45);
+      delay(60);
  
       left_servo.write(SERVO_L_FORWARD_MAX);
       right_servo.write(SERVO_L_FORWARD_MAX);
       delay(300);
       right_pid_val = analogRead(right_pid); //signal from center right sensor
       left_pid_val = analogRead(left_pid); //signal from center left sensor
-      curr_pos = left_pid_val - right_pid_val; // Positive position to right of line
-      error = curr_pos - set_point;
       right_turn_val = 0;
       left_turn_val = 0;
-      while((abs(error) < ERROR_RANGE) || (right_pid_val<900)){
-      left_servo.write(SERVO_L_FORWARD_MAX);
-      right_servo.write(SERVO_L_FORWARD_MAX);
+      
+
+  while((right_pid_val<800) || (left_pid_val<800)){
       right_pid_val = analogRead(right_pid); //signal from center right sensor
       left_pid_val = analogRead(left_pid); //signal from center left sensor
-      curr_pos = left_pid_val - right_pid_val; // Positive position to right of line
-      error = curr_pos - set_point;
-      delay(5);
+
       }
-    
       left_servo.write(90);
       right_servo.write(90);
-      delay(1000);
+      delay(100);
+      left_servo.write(SERVO_L_FORWARD_MAX);
+      right_servo.write(SERVO_R_FORWARD_MAX);
+      //drive forward until front sensors are clear of the horizontal tape
+      delay(70);
     }
     
   }
@@ -123,7 +114,6 @@ void loop() {
       if (abs(error) <= ERROR_RANGE){
         left_servo.write(SERVO_L_FORWARD_MAX);
         right_servo.write(SERVO_R_FORWARD_MAX);
-        delay(1);
       }
       // Too right
       else if (error > ERROR_RANGE) {
@@ -131,18 +121,12 @@ void loop() {
         error_magnitude = abs(error)/(float)ERROR_RANGE;
         left_servo.write(SERVO_L_FORWARD_MAX - error_magnitude*SERVO_L_INCR_FORWARD);
         right_servo.write(SERVO_R_FORWARD_MAX + error_magnitude*SERVO_R_INCR_FORWARD);
-//        delay(2);
-//        left_servo.write(SERVO_L_FORWARD_MAX + SERVO_L_INCR_FORWARD);
-//        delay(1);
       }
       else if (error < -ERROR_RANGE) {
       // Adjust right
       error_magnitude = abs(error)/(float)ERROR_RANGE;
       left_servo.write(SERVO_L_FORWARD_MAX + error_magnitude*SERVO_L_INCR_FORWARD);
       right_servo.write(SERVO_R_FORWARD_MAX - error_magnitude*SERVO_R_INCR_FORWARD);
-//      delay(2);
-//      right_servo.write(SERVO_R_FORWARD_MAX + SERVO_R_INCR_FORWARD);
-//      delay(1);
       }
     }
 
